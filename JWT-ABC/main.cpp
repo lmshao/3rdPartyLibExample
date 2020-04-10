@@ -1,5 +1,6 @@
 #include "jwt-cpp/jwt.h"
 #include <iostream>
+#include <unistd.h>
 
 int main()
 {
@@ -11,12 +12,13 @@ int main()
                           .set_subject("topic")                                                             // sub
                           .set_audience("client")                                                           // aud
                           .set_issued_at(std::chrono::system_clock::now())                                  // iat
-                          .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{ 3600 })  // exp
+                          .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{ 1 })  // exp
                           .set_payload_claim("sample", jwt::claim(std::string("abc")))  // customized
                           .sign(jwt::algorithm::hs256{ "123456" });                     // alg
 
     std::cout << "token: " << token << std::endl;
 
+    sleep(2);
     // Decode a token
     auto decoded = jwt::decode(token);
 
@@ -28,8 +30,12 @@ int main()
     try {
         verifier.verify(decoded);
         std::cout << "verify successfully!" << std::endl;
-    } catch (jwt::token_verification_exception e) {
+    } catch (std::runtime_error &e) {
         std::cout << "verify error: " << e.what() << std::endl;
+        std::string str(e.what());
+        if (str.find("token expired") != std::string::npos) {
+            std::cout << "==[token expired]==" << std::endl;
+        }
     }
 
     // Get all payload
