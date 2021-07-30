@@ -1,25 +1,35 @@
 #include "jwt-cpp/jwt.h"
-#include <iostream>
 #include <unistd.h>
+#include <iostream>
 
 int main()
 {
     std::cout << "Generate a Token" << std::endl;
+    std::string si = R"({"name":"liming"})";
+
+    picojson::value pv;
+    std::string err = picojson::parse(pv, si);
+    if (!err.empty()) {
+        std::cout << err << std::endl;
+    }
+
     // generate a token
     std::string token = jwt::create()
-                          .set_type("JWT")                                                                  // typ
-                          .set_issuer("server")                                                             // iss
-                          .set_subject("topic")                                                             // sub
-                          .set_audience("client")                                                           // aud
-                          .set_issued_at(std::chrono::system_clock::now())                                  // iat
+                          .set_type("JWT")                                  // typ
+                          .set_issuer("server")                             // iss
+                          .set_subject("topic")                             // sub
+                          .set_audience("client")                           // aud
+                          .set_payload_claim("info", jwt::claim(pv))        // custom claim = object
+                          .set_issued_at(std::chrono::system_clock::now())  // iat
                           .set_expires_at(std::chrono::system_clock::now() + std::chrono::seconds{ 1 })  // exp
-                          .set_payload_claim("sample", jwt::claim(std::string("abc")))  // customized
-                          .sign(jwt::algorithm::hs256{ "123456" });                     // alg
+                          .set_payload_claim("sample", jwt::claim(std::string("abc")))                   // customized
+                          .sign(jwt::algorithm::hs256{ "123456" });                                      // alg
 
-    // std::string token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2aWNlIjoiTElNSU5HLURFViIsInNlcnZpY2VLZXkiOiI4ZDdjYTlmYWVmMzdkM2ZkIiwiZXhwaXJlQXQiOjE1ODY3NDczMTZ9.Qw5vft+SfgDmnIN2/vG79QEQQLFGC9LIipY4AeVzceU=";
+    // std::string token =
+    // "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzZXJ2aWNlIjoiTElNSU5HLURFViIsInNlcnZpY2VLZXkiOiI4ZDdjYTlmYWVmMzdkM2ZkIiwiZXhwaXJlQXQiOjE1ODY3NDczMTZ9.Qw5vft+SfgDmnIN2/vG79QEQQLFGC9LIipY4AeVzceU=";
     std::cout << "token: " << token << std::endl;
 
-    sleep(2);
+    sleep(1);
     // Decode a token
     std::unique_ptr<jwt::decoded_jwt> decoded;
     try {
